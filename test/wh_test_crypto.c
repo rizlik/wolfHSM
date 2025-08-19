@@ -1581,6 +1581,7 @@ static int whTestCrypto_Aes(whClientContext* ctx, int devId, WC_RNG* rng)
 #ifdef HAVE_AESGCM
 #define WH_TEST_AES_AUTHSIZE 16
 #define WH_TEST_AES_TAGSIZE 16
+#define WH_TEST_AES_GCM_IV_SIZE 12
     uint8_t authIn[WH_TEST_AES_AUTHSIZE];
     uint8_t authTag[WH_TEST_AES_TAGSIZE] = { 0 };
 
@@ -1603,13 +1604,13 @@ static int whTestCrypto_Aes(whClientContext* ctx, int devId, WC_RNG* rng)
                 WH_ERROR_PRINT("Failed to wc_AesGcmSetKey %d\n", ret);
             } else {
                 ret = wc_AesGcmEncrypt(aes, cipher, plainIn,
-                        sizeof(plainIn), iv, sizeof(iv), authTag,
+                        sizeof(plainIn), iv, WH_TEST_AES_GCM_IV_SIZE, authTag,
                         sizeof(authTag), authIn, sizeof(authIn));
                 if (ret != 0) {
                     WH_ERROR_PRINT("Failed to wc_AesGcmEncrypt %d\n", ret);
                 } else {
                     ret = wc_AesGcmDecrypt(aes, plainOut, cipher,
-                            sizeof(plainIn), iv, sizeof(iv), authTag,
+                            sizeof(plainIn), iv, WH_TEST_AES_GCM_IV_SIZE, authTag,
                             sizeof(authTag), authIn, sizeof(authIn));
                     if (ret != 0) {
                         WH_ERROR_PRINT("Failed to wc_AesGcmDecrypt %d\n", ret);
@@ -1643,11 +1644,11 @@ static int whTestCrypto_Aes(whClientContext* ctx, int devId, WC_RNG* rng)
                 if (ret != 0) {
                     WH_ERROR_PRINT("Failed to set key id:%d\n", ret);
                 } else {
-                    ret = wc_AesGcmEncrypt(aes, (byte*)cipher, (byte*)plainIn, sizeof(plainIn), iv, sizeof(iv), authTag, sizeof(authTag), authIn, sizeof(authIn));
+                    ret = wc_AesGcmEncrypt(aes, (byte*)cipher, (byte*)plainIn, sizeof(plainIn), iv, WH_TEST_AES_GCM_IV_SIZE, authTag, sizeof(authTag), authIn, sizeof(authIn));
                     if (ret != 0) {
                         WH_ERROR_PRINT("Failed to wc_AesGcmEncrypt %d\n", ret);
                     } else {
-                        ret = wc_AesGcmDecrypt(aes, (byte*)plainOut, (byte*)cipher, sizeof(plainIn), iv, sizeof(iv), authTag, sizeof(authTag), authIn, sizeof(authIn));
+                        ret = wc_AesGcmDecrypt(aes, (byte*)plainOut, (byte*)cipher, sizeof(plainIn), iv, WH_TEST_AES_GCM_IV_SIZE, authTag, sizeof(authTag), authIn, sizeof(authIn));
                         if (ret != 0) {
                             WH_ERROR_PRINT("Failed to wc_AesGcmDecrypt %d\n", ret);
                         } else {
