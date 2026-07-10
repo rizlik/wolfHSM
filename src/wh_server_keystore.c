@@ -440,7 +440,7 @@ static int _ExportRsaPublicKey(whServerContext* server, whKeyId keyId,
     RsaKey key[1];
     int    pub_ret;
 
-    ret = wc_InitRsaKey_ex(key, NULL, INVALID_DEVID);
+    ret = wc_InitRsaKey_ex(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_CacheExportRsaKey(server, keyId, key);
         if (ret == 0) {
@@ -467,7 +467,7 @@ static int _ExportEccPublicKey(whServerContext* server, whKeyId keyId,
     ecc_key key[1];
     int     pub_ret;
 
-    ret = wc_ecc_init_ex(key, NULL, INVALID_DEVID);
+    ret = wc_ecc_init_ex(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_EccKeyCacheExport(server, keyId, key);
         if (ret == 0) {
@@ -493,7 +493,7 @@ static int _ExportEd25519PublicKey(whServerContext* server, whKeyId keyId,
     ed25519_key key[1];
     int         pub_ret;
 
-    ret = wc_ed25519_init_ex(key, NULL, INVALID_DEVID);
+    ret = wc_ed25519_init_ex(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_CacheExportEd25519Key(server, keyId, key);
         if (ret == 0) {
@@ -519,7 +519,7 @@ static int _ExportMldsaPublicKey(whServerContext* server, whKeyId keyId,
     wc_MlDsaKey key[1];
     int         pub_ret;
 
-    ret = wc_MlDsaKey_Init(key, NULL, INVALID_DEVID);
+    ret = wc_MlDsaKey_Init(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_MlDsaKeyCacheExport(server, keyId, key);
         if (ret == 0) {
@@ -545,7 +545,7 @@ static int _ExportCurve25519PublicKey(whServerContext* server, whKeyId keyId,
     curve25519_key key[1];
     int            pub_ret;
 
-    ret = wc_curve25519_init_ex(key, NULL, INVALID_DEVID);
+    ret = wc_curve25519_init_ex(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_CacheExportCurve25519Key(server, keyId, key);
         if (ret == 0) {
@@ -581,7 +581,7 @@ static int _ExportMlkemPublicKey(whServerContext* server, whKeyId keyId,
     const int initLevel = WC_ML_KEM_1024;
 #endif
 
-    ret = wc_MlKemKey_Init(key, initLevel, NULL, INVALID_DEVID);
+    ret = wc_MlKemKey_Init(key, initLevel, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_MlKemKeyCacheExport(server, keyId, key);
         if (ret == 0) {
@@ -614,7 +614,7 @@ static int _ExportLmsPublicKey(whServerContext* server, whKeyId keyId,
     LmsKey key[1];
     word32 pubLen = 0;
 
-    ret = wc_LmsKey_Init(key, NULL, INVALID_DEVID);
+    ret = wc_LmsKey_Init(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_LmsKeyCacheExport(server, keyId, key);
         if (ret == WH_ERROR_OK) {
@@ -643,7 +643,7 @@ static int _ExportXmssPublicKey(whServerContext* server, whKeyId keyId,
     XmssKey key[1];
     word32  pubLen = 0;
 
-    ret = wc_XmssKey_Init(key, NULL, INVALID_DEVID);
+    ret = wc_XmssKey_Init(key, NULL, server->devId);
     if (ret == 0) {
         ret = wh_Server_XmssKeyCacheExport(server, keyId, key);
         if (ret == WH_ERROR_OK) {
