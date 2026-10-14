@@ -148,27 +148,82 @@ int wh_Utils_ConstantCompare(const uint8_t* a, const uint8_t* b, size_t length)
 }
 
 /** Cache helper functions */
+static void _CacheFlushLine(uintptr_t line)
+{
+    XCACHEFLUSH((uint8_t*)line);
+    (void)line; /* in case the port's macro ignores its argument */
+}
+
+static void _CacheInvalidateLine(uintptr_t line)
+{
+    XCACHEINVLD((const uint8_t*)line);
+    (void)line;
+}
+
+/* Round x down to a multiple of align. Cannot overflow. */
+static uintptr_t _AlignDown(uintptr_t x, uintptr_t align)
+{
+    return x - (x % align);
+}
+
+/* Round x up to a multiple of align into *out. Returns 0 on success, or -1 and
+ * leaves *out untouched when the result does not fit in a uintptr_t. */
+static int _AlignUp(uintptr_t x, uintptr_t align, uintptr_t* out)
+{
+    uintptr_t rem = x % align;
+
+    if (rem == 0) {
+        *out = x;
+        return 0;
+    }
+    if (x > UINTPTR_MAX - (align - rem)) {
+        return -1;
+    }
+    *out = x + (align - rem);
+    return 0;
+}
+
+/* Apply op to every cache line holding a byte of [p, p + n), starting from the
+ * line holding p even when p is not line aligned. No-op when n is 0. A range
+ * reaching the top of the address space stops at the last line there. */
+static void _ForEachCacheLine(const void* p, size_t n, void (*op)(uintptr_t))
+{
+    uintptr_t start = (uintptr_t)p;
+    uintptr_t line;
+    uintptr_t last;
+    uintptr_t end;
+
+    if (n == 0) {
+        return;
+    }
+    line = _AlignDown(start, XCACHELINE);
+    if ((n > UINTPTR_MAX - start) ||
+        (_AlignUp(start + n, XCACHELINE, &end) != 0)) {
+        /* End of range is not representable: clamp to the topmost line */
+        last = _AlignDown(UINTPTR_MAX, XCACHELINE);
+    }
+    else {
+        /* end is aligned and > line, so this cannot underflow */
+        last = end - XCACHELINE;
+    }
+    while (1) {
+        op(line);
+        if (line >= last) {
+            break;
+        }
+        line += XCACHELINE;
+    }
+}
+
 const void* wh_Utils_CacheInvalidate(const void* p, size_t n)
 {
-    int len = (int)n;
-    const uint8_t* ptr = (const uint8_t*)p;
-    do {
-        XCACHEINVLD(ptr);
-        ptr += XCACHELINE;
-        len -= XCACHELINE;
-    } while (len > 0);
+    _ForEachCacheLine(p, n, _CacheInvalidateLine);
     return p;
 }
 
 void* wh_Utils_CacheFlush(void* p, size_t n)
 {
-    int len = (int)n;
-    uint8_t* ptr = (uint8_t*)p;
-    do {
-        XCACHEFLUSH(ptr);
-        ptr += XCACHELINE;
-        len -= XCACHELINE;
-    } while (len > 0);
+    _ForEachCacheLine(p, n, _CacheFlushLine);
     return p;
 }
 
@@ -191,6 +246,54 @@ void* wh_Utils_memcpy_flush(void* dst, const void* src , size_t n)
     return XCACHEFLUSHBLK(dst, n);
 }
 
+#if defined(WOLFHSM_CFG_DMA) && !defined(WOLFHSM_CFG_NO_CRYPTO)
+/** DMA buffer helpers */
+#ifdef WOLFHSM_CFG_DMA_NONCOHERENT
+/* The allocator only guarantees its own alignment, so over-allocate and keep
+ * the raw pointer just before the aligned start */
+void* wh_Utils_DmaAlloc(size_t len, void* heap)
+{
+    uintptr_t raw;
+    uintptr_t aligned;
+
+    (void)heap;
+    raw = (uintptr_t)XMALLOC(sizeof(uintptr_t) + (WOLFHSM_CFG_DMA_ALIGN - 1) +
+                                 WH_DMA_PAD_SIZE(len),
+                             heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (raw == 0) {
+        return NULL;
+    }
+    aligned = (raw + sizeof(uintptr_t) + (WOLFHSM_CFG_DMA_ALIGN - 1)) &
+              ~((uintptr_t)WOLFHSM_CFG_DMA_ALIGN - 1);
+    memcpy((void*)(aligned - sizeof(uintptr_t)), &raw, sizeof(raw));
+    return (void*)aligned;
+}
+
+void wh_Utils_DmaFree(void* ptr, void* heap)
+{
+    uintptr_t raw;
+
+    if (ptr == NULL) {
+        return;
+    }
+    (void)heap;
+    memcpy(&raw, (uint8_t*)ptr - sizeof(uintptr_t), sizeof(raw));
+    XFREE((void*)raw, heap, DYNAMIC_TYPE_TMP_BUFFER);
+}
+#else
+void* wh_Utils_DmaAlloc(size_t len, void* heap)
+{
+    (void)heap;
+    return XMALLOC(len, heap, DYNAMIC_TYPE_TMP_BUFFER);
+}
+
+void wh_Utils_DmaFree(void* ptr, void* heap)
+{
+    (void)heap;
+    XFREE(ptr, heap, DYNAMIC_TYPE_TMP_BUFFER);
+}
+#endif /* WOLFHSM_CFG_DMA_NONCOHERENT */
+#endif /* WOLFHSM_CFG_DMA && !WOLFHSM_CFG_NO_CRYPTO */
 
 #if defined(WOLFHSM_CFG_HEXDUMP)
 void wh_Utils_Hexdump(const char* initial, const uint8_t* ptr, size_t size)

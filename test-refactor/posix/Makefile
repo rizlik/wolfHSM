@@ -112,6 +112,14 @@ ifeq ($(DMA),1)
     DEF += -DWOLFHSM_CFG_DMA
 endif
 
+# DMA with non-coherent client caches (requires DMA=1)
+ifeq ($(DMA_NONCOHERENT),1)
+    ifneq ($(DMA),1)
+        $(error "DMA_NONCOHERENT=1 requires DMA=1 to be set")
+    endif
+    DEF += -DWOLFHSM_CFG_DMA_NONCOHERENT
+endif
+
 # Enable CRC16 integrity checking in the NVM flash backend
 ifeq ($(NVM_FLASH_CRC),1)
     DEF += -DWOLFHSM_CFG_NVM_FLASH_CRC16
@@ -199,6 +207,14 @@ ifeq ($(TESTWOLFCRYPT),1)
     ifneq ($(TESTWOLFCRYPT_DMA),)
         ifeq ($(DMA),)
             $(error "TESTWOLFCRYPT_DMA=1 requires DMA=1 to be set")
+        endif
+    endif
+
+    # wolfCrypt cannot use DMA with non-coherent caches (WH_DEV_ID_DMA fails
+    # every operation), so the suite cannot run against WH_DEV_ID_DMA
+    ifneq ($(TESTWOLFCRYPT_DMA),)
+        ifeq ($(DMA_NONCOHERENT),1)
+            $(error "TESTWOLFCRYPT_DMA=1 cannot be used with DMA_NONCOHERENT=1")
         endif
     endif
 

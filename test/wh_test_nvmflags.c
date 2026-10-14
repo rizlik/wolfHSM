@@ -48,7 +48,8 @@ static int _testNonExportableNvmAccess(whClientContext* client)
     int       ret       = 0;
     whNvmId   nvmId     = 2; /* Arbitrary NVM ID */
     uint8_t   nvmData[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
-    uint8_t   exportedNvmData[sizeof(nvmData)] = {0};
+    WH_DMA_ALIGNED uint8_t exportedNvmData[WH_DMA_PAD_SIZE(sizeof(nvmData))] = {
+        0};
     uint8_t   nvmLabel[WH_NVM_LABEL_LEN]       = "NonExportableNvmObj";
     int32_t   out_rc                           = 0;
     whNvmSize out_len                          = 0;
@@ -69,7 +70,7 @@ static int _testNonExportableNvmAccess(whClientContext* client)
 
     /* Try to read the non-exportable NVM object - should fail */
     out_rc = 0;
-    ret = wh_Client_NvmRead(client, nvmId, 0, sizeof(exportedNvmData), &out_rc,
+    ret = wh_Client_NvmRead(client, nvmId, 0, sizeof(nvmData), &out_rc,
                             &out_len, exportedNvmData);
     if (ret != 0 || out_rc != WH_ERROR_ACCESS) {
         WH_ERROR_PRINT("Non-exportable NVM object was read unexpectedly: "
@@ -102,7 +103,7 @@ static int _testNonExportableNvmAccess(whClientContext* client)
     memset(exportedNvmData, 0, sizeof(exportedNvmData));
     out_rc  = 0;
     out_len = 0;
-    ret = wh_Client_NvmRead(client, nvmId, 0, sizeof(exportedNvmData), &out_rc,
+    ret = wh_Client_NvmRead(client, nvmId, 0, sizeof(nvmData), &out_rc,
                             &out_len, exportedNvmData);
     if (ret != 0 || out_rc != 0) {
         WH_ERROR_PRINT(
@@ -144,7 +145,7 @@ static int _testNonExportableNvmAccess(whClientContext* client)
     /* Try to read the non-exportable NVM object via DMA - should fail */
     memset(exportedNvmData, 0, sizeof(exportedNvmData));
     out_rc = 0;
-    ret    = wh_Client_NvmReadDma(client, nvmId, 0, sizeof(exportedNvmData),
+    ret    = wh_Client_NvmReadDma(client, nvmId, 0, sizeof(nvmData),
                                   exportedNvmData, &out_rc);
     if (ret != 0 || out_rc != WH_ERROR_ACCESS) {
         WH_ERROR_PRINT("Non-exportable NVM object was read via DMA "
@@ -175,7 +176,7 @@ static int _testNonExportableNvmAccess(whClientContext* client)
     /* Try to read the exportable NVM object via DMA - should succeed */
     memset(exportedNvmData, 0, sizeof(exportedNvmData));
     out_rc = 0;
-    ret    = wh_Client_NvmReadDma(client, nvmId, 0, sizeof(exportedNvmData),
+    ret    = wh_Client_NvmReadDma(client, nvmId, 0, sizeof(nvmData),
                                   exportedNvmData, &out_rc);
     if (ret != 0 || out_rc != 0) {
         WH_ERROR_PRINT(
@@ -390,8 +391,8 @@ static int _testNvmNonmodifiableNoOverwriteDma(whClientContext* client)
     int32_t       server_rc;
     uint8_t       data1[]                 = {0x11, 0x22, 0x33, 0x44};
     uint8_t       data2[]                 = {0xAA, 0xBB, 0xCC, 0xDD};
-    uint8_t       readData[sizeof(data1)] = {0};
-    whNvmSize     readLen                 = sizeof(readData);
+    WH_DMA_ALIGNED uint8_t readData[WH_DMA_PAD_SIZE(sizeof(data1))] = {0};
+    whNvmSize     readLen                 = sizeof(data1);
     whNvmId       list[1]                 = {TEST_NVM_ID_NONMOD_DMA};
     whNvmMetadata meta                    = {0};
 
@@ -408,7 +409,7 @@ static int _testNvmNonmodifiableNoOverwriteDma(whClientContext* client)
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
 
     WH_TEST_RETURN_ON_FAIL(wh_Client_NvmReadDma(client, TEST_NVM_ID_NONMOD_DMA,
-                                                0, sizeof(readData), readData,
+                                                0, sizeof(data1), readData,
                                                 &server_rc));
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
     WH_TEST_ASSERT_RETURN(memcmp(readData, data1, sizeof(data1)) == 0);
@@ -419,7 +420,7 @@ static int _testNvmNonmodifiableNoOverwriteDma(whClientContext* client)
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_ACCESS);
 
     memset(readData, 0, sizeof(readData));
-    readLen = sizeof(readData);
+    readLen = sizeof(data1);
     WH_TEST_RETURN_ON_FAIL(wh_Client_NvmReadDma(
         client, TEST_NVM_ID_NONMOD_DMA, 0, readLen, readData, &server_rc));
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
@@ -435,7 +436,7 @@ static int _testNvmNonmodifiableNoOverwriteDma(whClientContext* client)
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_ACCESS);
 
     WH_TEST_RETURN_ON_FAIL(wh_Client_NvmReadDma(client, TEST_NVM_ID_NONMOD_DMA,
-                                                0, sizeof(readData), readData,
+                                                0, sizeof(data1), readData,
                                                 &server_rc));
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
 
@@ -448,8 +449,8 @@ static int _testNvmNondestroyableModifyNoDestroyDma(whClientContext* client)
     int32_t       server_rc;
     uint8_t       data1[]                 = {0x55, 0x66, 0x77, 0x88};
     uint8_t       data2[]                 = {0x99, 0xAA, 0xBB, 0xCC};
-    uint8_t       readData[sizeof(data2)] = {0};
-    whNvmSize     readLen                 = sizeof(readData);
+    WH_DMA_ALIGNED uint8_t readData[WH_DMA_PAD_SIZE(sizeof(data2))] = {0};
+    whNvmSize     readLen                 = sizeof(data2);
     whNvmId       list[1]                 = {TEST_NVM_ID_NONDESTROYABLE_DMA};
     whNvmMetadata meta                    = {0};
 
@@ -474,7 +475,7 @@ static int _testNvmNondestroyableModifyNoDestroyDma(whClientContext* client)
 
     WH_TEST_RETURN_ON_FAIL(
         wh_Client_NvmReadDma(client, TEST_NVM_ID_NONDESTROYABLE_DMA, 0,
-                             sizeof(readData), readData, &server_rc));
+                             sizeof(data2), readData, &server_rc));
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
     WH_TEST_ASSERT_RETURN(memcmp(readData, data2, sizeof(data2)) == 0);
 
@@ -483,7 +484,7 @@ static int _testNvmNondestroyableModifyNoDestroyDma(whClientContext* client)
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_ACCESS);
 
     memset(readData, 0, sizeof(readData));
-    readLen = sizeof(readData);
+    readLen = sizeof(data2);
     WH_TEST_RETURN_ON_FAIL(
         wh_Client_NvmReadDma(client, TEST_NVM_ID_NONDESTROYABLE_DMA, 0, readLen,
                              readData, &server_rc));
@@ -704,7 +705,7 @@ static int _testKeyNondestroyableNoEraseDma(whClientContext* client)
                        0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE};
     uint8_t  key2[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22,
                        0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00};
-    uint8_t  exported[sizeof(key2)]  = {0};
+    WH_DMA_ALIGNED uint8_t exported[WH_DMA_PAD_SIZE(sizeof(key2))] = {0};
     uint16_t exportedLen             = sizeof(exported);
     uint8_t  label[WH_NVM_LABEL_LEN] = "nondestroyable_dma";
 

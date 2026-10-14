@@ -45,6 +45,7 @@ WH_TEST_DECL(whTest_Comm);
 WH_TEST_DECL(whTest_CryptoAffinity);
 WH_TEST_DECL(whTest_CryptoAesGcmDmaAad);
 WH_TEST_DECL(whTest_Dma);
+WH_TEST_DECL(whTest_DmaNonCoherent);
 WH_TEST_DECL(whTest_HwKeystore);
 WH_TEST_DECL(whTest_KeystoreReqSize);
 WH_TEST_DECL(whTest_MessageNvmTranslate);
@@ -117,6 +118,7 @@ const whTestCase whTestsMisc[] = {
     { "whTest_ClientDevId",      whTest_ClientDevId },
     { "whTest_Comm",             whTest_Comm },
     { "whTest_Dma",              whTest_Dma },
+    { "whTest_DmaNonCoherent",   whTest_DmaNonCoherent },
     { "whTest_CryptoAffinity",   whTest_CryptoAffinity },
     { "whTest_CryptoAesGcmDmaAad", whTest_CryptoAesGcmDmaAad },
     { "whTest_KeystoreReqSize",  whTest_KeystoreReqSize },

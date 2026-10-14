@@ -137,6 +137,8 @@ These macros gate and tune DMA-mode crypto and large-buffer operations.
 | `WOLFHSM_CFG_DMA_PTR_SIZE` | Compiler-detected (`__SIZEOF_POINTER__`) | Override the assumed DMA pointer size, in bytes (must be `4` or `8`). Auto-detection works for GCC/Clang and IAR; define this explicitly for any toolchain that does not provide `__SIZEOF_POINTER__`. |
 | `WOLFHSM_CFG_DMA_ALT_PTR_SIZE` | Undefined | If defined, allows the DMA pointer size to differ from the native CPU pointer size (e.g. a 32-bit-pointer server reachable from a 64-bit-pointer client). When undefined, wh_settings.h refuses to build with a mismatched `WOLFHSM_CFG_DMA_PTR_SIZE`. |
 | `WOLFHSM_CFG_DMA_INLINE_AAD_MAX_SIZE` | `128` | Largest additional authenticated data, in bytes, that a DMA AEAD request can carry inside the message (through the transport) instead of over DMA. An AAD above this size is passed as a DMA buffer. |
+| `WOLFHSM_CFG_DMA_NONCOHERENT` | Undefined | Define when client memory the server writes over DMA is cached and not kept coherent by the hardware. Output buffers of the `wh_Client_*Dma` APIs must then be aligned and padded to `WOLFHSM_CFG_DMA_ALIGN`, and DMA through wolfCrypt is refused (`WH_DEV_ID_DMA` fails with `WC_HW_E`, `preferDma` cannot be enabled). Requires `WOLFHSM_CFG_DMA`. Set by `DMA_NONCOHERENT=1` in the test and benchmark builds. See [Non-Coherent Caches and Buffer Alignment](5-Features.md#non-coherent-caches-and-buffer-alignment). |
+| `WOLFHSM_CFG_DMA_ALIGN` | `XCACHELINE` | Alignment and padding, in bytes, of client buffers the server writes over DMA. A power of two and a multiple of `XCACHELINE`. Only used with `WOLFHSM_CFG_DMA_NONCOHERENT`. |
 | `WOLFHSM_CFG_DMA_CUSTOM_CLIENT_COPY` | Undefined | If defined, expose hooks that let the integrator override the client-to-server and server-to-client memory copy used during DMA requests. Useful when DMA buffers live in shared memory that requires custom invalidation or cache maintenance beyond the standard `XCACHE*` macros. |
 
 ## Authentication
@@ -222,7 +224,7 @@ These macros are consumed only by the wolfHSM test suite (`test/`) and its suppo
 For completeness, wolfHSM also relies on a small number of `X*` porting macros that are normally supplied alongside the `WOLFHSM_CFG_*` macros in `wolfhsm_cfg.h` even though they do not share the prefix:
 
 - `XMEMFENCE()` — sequential memory fence (defaults to `__atomic_thread_fence(__ATOMIC_SEQ_CST)` on GCC/Clang; otherwise a no-op with a build warning).
-- `XCACHELINE` — cache-line size in bytes (default `32`).
+- `XCACHELINE` — cache-line size in bytes (default `32`). Must be usable in `#if` with `WOLFHSM_CFG_DMA_NONCOHERENT`.
 - `XCACHEFLUSH(p)` / `XCACHEFLUSHBLK(p, n)` — flush one line / a range; defaults are no-op and `wh_Utils_CacheFlush` respectively.
 - `XCACHEINVLD(p)` / `XCACHEINVLDBLK(p, n)` — invalidate one line / a range; defaults are no-op and `wh_Utils_CacheInvalidate` respectively.
 

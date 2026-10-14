@@ -541,8 +541,8 @@ typedef struct {
 
 #ifdef WOLFHSM_CFG_DMA
     /* Per-client DMA buffers */
-    uint8_t dmaKeyBuffer[KEY_DATA_SIZE];
-    uint8_t dmaNvmBuffer[NVM_OBJECT_DATA_SIZE];
+    WH_DMA_ALIGNED uint8_t dmaKeyBuffer[WH_DMA_PAD_SIZE(KEY_DATA_SIZE)];
+    WH_DMA_ALIGNED uint8_t dmaNvmBuffer[WH_DMA_PAD_SIZE(NVM_OBJECT_DATA_SIZE)];
 #endif
 } ClientServerPair;
 

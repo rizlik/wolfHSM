@@ -425,7 +425,7 @@ static int _whTest_CryptoMlDsaDmaClient(whClientContext* ctx)
 
     if (ret == 0) {
         byte   msg[] = "Test message to sign";
-        byte   sig[DILITHIUM_MAX_SIG_SIZE];
+        WH_DMA_ALIGNED byte sig[WH_DMA_PAD_SIZE(DILITHIUM_MAX_SIG_SIZE)];
         word32 sigLen   = sizeof(sig);
         int    verified = 0;
 
@@ -471,7 +471,7 @@ static int _whTest_CryptoMlDsaDmaClient(whClientContext* ctx)
 
     if (ret == 0) {
         byte       msg[]     = "Context test message";
-        byte       sig[DILITHIUM_MAX_SIG_SIZE];
+        WH_DMA_ALIGNED byte sig[WH_DMA_PAD_SIZE(DILITHIUM_MAX_SIG_SIZE)];
         word32     sigLen    = sizeof(sig);
         int        verified  = 0;
         const byte ctx_str[] = "test-context";
@@ -545,7 +545,8 @@ static int _whTest_CryptoMlDsaExportPublicKeyDma(whClientContext* ctx)
     int      ret   = 0;
     MlDsaKey pub[1] = {0};
     whKeyId  keyId  = WH_KEYID_ERASED;
-    uint8_t  denyBuf[DILITHIUM_MAX_BOTH_KEY_DER_SIZE];
+    WH_DMA_ALIGNED uint8_t
+        denyBuf[WH_DMA_PAD_SIZE(DILITHIUM_MAX_BOTH_KEY_DER_SIZE)];
     uint16_t denyLen = sizeof(denyBuf);
 
     ret = wh_Client_MlDsaMakeCacheKey(
@@ -617,7 +618,7 @@ static int _whTest_CryptoMlDsaCacheKeyAndExportPublicDma(whClientContext* ctx)
     MlDsaKey refPub[1] = {0};
     whKeyId  keyId     = WH_KEYID_ERASED;
     byte     msg[]     = "ML-DSA DMA cache-export-public message";
-    byte     sig[DILITHIUM_MAX_SIG_SIZE];
+    WH_DMA_ALIGNED byte sig[WH_DMA_PAD_SIZE(DILITHIUM_MAX_SIG_SIZE)];
     word32   sigLen    = sizeof(sig);
     int      verified  = 0;
     byte     genDer[DILITHIUM_MAX_PUB_KEY_DER_SIZE];
